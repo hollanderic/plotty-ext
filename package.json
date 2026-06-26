@@ -1,0 +1,37 @@
+{
+  "name": "plotty-ext",
+  "displayName": "Plotty",
+  "description": "Real-time CSV and serial data plotting within Antigravity IDE",
+  "version": "0.0.1",
+  "publisher": "hollanderic",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:plotty-ext.openPlotter"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "plotty-ext.openPlotter",
+        "title": "Plotty: Open Serial Data Plotter",
+        "category": "Plotty"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.0",
+    "@types/vscode": "^1.75.0",
+    "esbuild": "^0.19.0",
+    "typescript": "^5.0.0"
+  }
+}

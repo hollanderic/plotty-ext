@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plotty - Real-time Serial Plotter</title>
+    <link rel="stylesheet" href="${stylesUri}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Plotty Configurations</h2>
+            </div>
+            
+            <div class="control-group">
+                <label for="source-type">Source Type</label>
+                <select id="source-type">
+                    <option value="serial">Serial Port</option>
+                    <option value="socket">TCP Socket</option>
+                    <option value="file">Local File</option>
+                    <option value="url">HTTP/HTTPS URL</option>
+                    <option value="ssh">SSH Remote File</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label id="source-path-label" for="source-path">Serial Port / Device</label>
+                <input type="text" id="source-path" placeholder="e.g. COM3 or /dev/ttyUSB0" value="COM3">
+            </div>
+
+            <div class="control-group" id="baudrate-group">
+                <label for="baudrate">Baud Rate</label>
+                <select id="baudrate">
+                    <option value="9600">9600</option>
+                    <option value="19200">19200</option>
+                    <option value="38400">38400</option>
+                    <option value="57600">57600</option>
+                    <option value="115200" selected>115200</option>
+                    <option value="230400">230400</option>
+                    <option value="460800">460800</option>
+                    <option value="921600">921600</option>
+                </select>
+            </div>
+
+            <div class="columns-group">
+                <div class="control-group inline">
+                    <label for="x-col">X Column</label>
+                    <input type="number" id="x-col" min="0" value="0">
+                </div>
+                <div class="control-group inline">
+                    <label for="y-cols">Y Columns</label>
+                    <input type="text" id="y-cols" value="1" placeholder="e.g. 1,2,3">
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="follow" checked>
+                    <span class="checkmark"></span>
+                    Follow (tail -f)
+                </label>
+            </div>
+
+            <div class="checkbox-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="title" checked>
+                    <span class="checkmark"></span>
+                    First Row is Header
+                </label>
+            </div>
+
+            <div class="action-buttons">
+                <button id="btn-connect" class="btn btn-connect">Connect</button>
+                <button id="btn-disconnect" class="btn btn-disconnect" disabled>Disconnect</button>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="btn-clear" class="btn btn-secondary">Clear Plot Data</button>
+            </div>
+        </aside>
+
+        <!-- Main Plot Area -->
+        <main class="main-content">
+            <header class="status-bar">
+                <div class="status-indicator">
+                    <span class="status-dot disconnected" id="status-dot"></span>
+                    <span class="status-text" id="status-text">Disconnected</span>
+                </div>
+                <div class="title-bar" id="plot-title">No Source Connected</div>
+            </header>
+
+            <div class="chart-container">
+                <canvas id="plot-canvas"></canvas>
+            </div>
+
+            <!-- Console Log -->
+            <section class="console-section">
+                <div class="console-header">
+                    <h3>Data Stream Console</h3>
+                    <button id="btn-clear-console" class="btn-text">Clear Log</button>
+                </div>
+                <div class="console-output" id="console-output">
+                    <div class="log-line system">Console initialized. Ready to connect.</div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="${scriptUri}"></script>
+</body>
+</html>
