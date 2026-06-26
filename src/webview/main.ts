@@ -337,12 +337,19 @@ function drawPlot() {
     let minY = Infinity;
     let maxY = -Infinity;
     
-    yDataList.forEach(arr => {
-        if (arr.length > 0) {
-            minY = Math.min(minY, ...arr);
-            maxY = Math.max(maxY, ...arr);
+    // Auto-scale Y based only on data points visible in the current X-axis window
+    for (let idx = 0; idx < xData.length; idx++) {
+        const x = xData[idx];
+        if (x >= minX && x <= maxX) {
+            yDataList.forEach(arr => {
+                if (idx < arr.length) {
+                    const y = arr[idx];
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
+            });
         }
-    });
+    }
     
     if (minY === Infinity) minY = -1;
     if (maxY === -Infinity) maxY = 1;
