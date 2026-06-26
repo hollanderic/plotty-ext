@@ -72,6 +72,19 @@
                 </label>
             </div>
 
+            <div class="checkbox-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="autorange-x" checked>
+                    <span class="checkmark"></span>
+                    Auto-range X Axis
+                </label>
+            </div>
+
+            <div class="control-group" id="x-span-group" style="display: none;">
+                <label for="x-span">X Axis Span</label>
+                <input type="number" id="x-span" min="1" value="100" placeholder="e.g. 100">
+            </div>
+
             <div class="action-buttons">
                 <button id="btn-connect" class="btn btn-connect">Connect</button>
                 <button id="btn-disconnect" class="btn btn-disconnect" disabled>Disconnect</button>

@@ -11,6 +11,9 @@ const xColInput = document.getElementById('x-col') as HTMLInputElement;
 const yColsInput = document.getElementById('y-cols') as HTMLInputElement;
 const followCheckbox = document.getElementById('follow') as HTMLInputElement;
 const titleCheckbox = document.getElementById('title') as HTMLInputElement;
+const autorangeXCheckbox = document.getElementById('autorange-x') as HTMLInputElement;
+const xSpanGroup = document.getElementById('x-span-group') as HTMLDivElement;
+const xSpanInput = document.getElementById('x-span') as HTMLInputElement;
 const btnConnect = document.getElementById('btn-connect') as HTMLButtonElement;
 const btnDisconnect = document.getElementById('btn-disconnect') as HTMLButtonElement;
 const btnClear = document.getElementById('btn-clear') as HTMLButtonElement;
@@ -84,6 +87,21 @@ btnClear.addEventListener('click', () => {
 // Clear Console Logs
 btnClearConsole.addEventListener('click', () => {
     consoleOutput.innerHTML = '';
+});
+
+// Auto-range X Axis toggling
+autorangeXCheckbox.addEventListener('change', () => {
+    if (autorangeXCheckbox.checked) {
+        xSpanGroup.style.display = 'none';
+    } else {
+        xSpanGroup.style.display = 'flex';
+    }
+    drawPlot();
+});
+
+// X-span input changes
+xSpanInput.addEventListener('input', () => {
+    drawPlot();
 });
 
 // Connect Action
@@ -305,8 +323,16 @@ function drawPlot() {
     }
     
     // 2. Compute min/max for auto-scaling
-    let minX = Math.min(...xData);
-    let maxX = Math.max(...xData);
+    let minX = 0;
+    let maxX = 0;
+    if (autorangeXCheckbox.checked) {
+        minX = Math.min(...xData);
+        maxX = Math.max(...xData);
+    } else {
+        const span = parseFloat(xSpanInput.value) || 100;
+        maxX = Math.max(...xData);
+        minX = maxX - span;
+    }
     
     let minY = Infinity;
     let maxY = -Infinity;
@@ -398,6 +424,12 @@ function drawPlot() {
     ctx.restore();
     
     // 5. Draw Lines with Neon Glow Effects!
+    ctx.save();
+    // Create a clipping path to restrict drawing to the grid area
+    ctx.beginPath();
+    ctx.rect(margin.left, margin.top, chartWidth, chartHeight);
+    ctx.clip();
+
     yDataList.forEach((yArr, lineIndex) => {
         if (yArr.length < 2) return;
         
@@ -422,6 +454,7 @@ function drawPlot() {
         ctx.stroke();
         ctx.restore();
     });
+    ctx.restore();
     
     // 6. Draw Legend
     if (legendLabels.length > 0) {
