@@ -11,9 +11,10 @@ const xColInput = document.getElementById('x-col') as HTMLInputElement;
 const yColsInput = document.getElementById('y-cols') as HTMLInputElement;
 const followCheckbox = document.getElementById('follow') as HTMLInputElement;
 const titleCheckbox = document.getElementById('title') as HTMLInputElement;
-const autorangeXCheckbox = document.getElementById('autorange-x') as HTMLInputElement;
-const xSpanGroup = document.getElementById('x-span-group') as HTMLDivElement;
-const xSpanInput = document.getElementById('x-span') as HTMLInputElement;
+const autorangeYCheckbox = document.getElementById('autorange-y') as HTMLInputElement;
+const yRangeGroup = document.getElementById('y-range-group') as HTMLDivElement;
+const yMinInput = document.getElementById('y-min') as HTMLInputElement;
+const yMaxInput = document.getElementById('y-max') as HTMLInputElement;
 const btnConnect = document.getElementById('btn-connect') as HTMLButtonElement;
 const btnDisconnect = document.getElementById('btn-disconnect') as HTMLButtonElement;
 const btnClear = document.getElementById('btn-clear') as HTMLButtonElement;
@@ -31,6 +32,8 @@ let yDataList: number[][] = []; // Array of arrays for multiple Y lines
 let legendLabels: string[] = [];
 let xAxisLabel = 'X';
 let isConnected = false;
+let lastComputedMinY = 0;
+let lastComputedMaxY = 100;
 
 const MAX_POINTS_TO_KEEP = 1000; // Limits memory consumption during follow mode
 
@@ -89,18 +92,23 @@ btnClearConsole.addEventListener('click', () => {
     consoleOutput.innerHTML = '';
 });
 
-// Auto-range X Axis toggling
-autorangeXCheckbox.addEventListener('change', () => {
-    if (autorangeXCheckbox.checked) {
-        xSpanGroup.style.display = 'none';
+// Auto-range Y Axis toggling
+autorangeYCheckbox.addEventListener('change', () => {
+    if (autorangeYCheckbox.checked) {
+        yRangeGroup.style.display = 'none';
     } else {
-        xSpanGroup.style.display = 'flex';
+        yRangeGroup.style.display = 'flex';
+        yMinInput.value = lastComputedMinY.toString();
+        yMaxInput.value = lastComputedMaxY.toString();
     }
     drawPlot();
 });
 
-// X-span input changes
-xSpanInput.addEventListener('input', () => {
+// Y-range input changes
+yMinInput.addEventListener('input', () => {
+    drawPlot();
+});
+yMaxInput.addEventListener('input', () => {
     drawPlot();
 });
 
@@ -323,47 +331,50 @@ function drawPlot() {
     }
     
     // 2. Compute min/max for auto-scaling
-    let minX = 0;
-    let maxX = 0;
-    if (autorangeXCheckbox.checked) {
-        minX = Math.min(...xData);
-        maxX = Math.max(...xData);
+    let minX = Math.min(...xData);
+    let maxX = Math.max(...xData);
+    if (maxX === minX) { minX -= 1; maxX += 1; }
+    const xRange = maxX - minX;
+    
+    let minY = 0;
+    let maxY = 100;
+    
+    if (autorangeYCheckbox.checked) {
+        let rawMinY = Infinity;
+        let rawMaxY = -Infinity;
+        yDataList.forEach(arr => {
+            if (arr.length > 0) {
+                rawMinY = Math.min(rawMinY, ...arr);
+                rawMaxY = Math.max(rawMaxY, ...arr);
+            }
+        });
+        
+        if (rawMinY === Infinity) rawMinY = -1;
+        if (rawMaxY === -Infinity) rawMaxY = 1;
+        if (rawMaxY === rawMinY) { rawMinY -= 1; rawMaxY += 1; }
+        
+        const rawYRange = rawMaxY - rawMinY;
+        const padY = rawYRange * 0.05;
+        minY = rawMinY - padY;
+        maxY = rawMaxY + padY;
     } else {
-        const span = parseFloat(xSpanInput.value) || 100;
-        maxX = Math.max(...xData);
-        minX = maxX - span;
+        minY = parseFloat(yMinInput.value);
+        maxY = parseFloat(yMaxInput.value);
+        if (isNaN(minY)) minY = 0;
+        if (isNaN(maxY)) maxY = 100;
+        if (maxY <= minY) {
+            maxY = minY + 1;
+        }
     }
     
-    let minY = Infinity;
-    let maxY = -Infinity;
+    lastComputedMinY = minY;
+    lastComputedMaxY = maxY;
     
-    yDataList.forEach(arr => {
-        if (arr.length > 0) {
-            minY = Math.min(minY, ...arr);
-            maxY = Math.max(maxY, ...arr);
-        }
-    });
-    
-    if (minY === Infinity) minY = -1;
-    if (maxY === -Infinity) maxY = 1;
-    
-    // Add padding to scales to keep lines from clipping
-    if (maxX === minX) { minX -= 1; maxX += 1; }
-    if (maxY === minY) { minY -= 1; maxY += 1; }
-    
-    const xRange = maxX - minX;
     const yRange = maxY - minY;
-    
-    // Extra padding factor
-    const padY = yRange * 0.05;
-    minY -= padY;
-    maxY += padY;
-    
-    const paddedYRange = maxY - minY;
     
     // Helper to map values to canvas pixels
     const getXPixel = (val: number) => margin.left + ((val - minX) / xRange) * chartWidth;
-    const getYPixel = (val: number) => margin.top + chartHeight - ((val - minY) / paddedYRange) * chartHeight;
+    const getYPixel = (val: number) => margin.top + chartHeight - ((val - minY) / yRange) * chartHeight;
     
     // 3. Draw Grid Lines & Labels
     const numGridLines = 5;
@@ -376,7 +387,7 @@ function drawPlot() {
     // Horizontal Gridlines & Y axis labels
     for (let i = 0; i <= numGridLines; i++) {
         const pct = i / numGridLines;
-        const yVal = minY + pct * paddedYRange;
+        const yVal = minY + pct * yRange;
         const py = getYPixel(yVal);
         
         // Draw gridline

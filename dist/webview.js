@@ -11,6 +11,10 @@
   var yColsInput = document.getElementById("y-cols");
   var followCheckbox = document.getElementById("follow");
   var titleCheckbox = document.getElementById("title");
+  var autorangeYCheckbox = document.getElementById("autorange-y");
+  var yRangeGroup = document.getElementById("y-range-group");
+  var yMinInput = document.getElementById("y-min");
+  var yMaxInput = document.getElementById("y-max");
   var btnConnect = document.getElementById("btn-connect");
   var btnDisconnect = document.getElementById("btn-disconnect");
   var btnClear = document.getElementById("btn-clear");
@@ -26,6 +30,8 @@
   var legendLabels = [];
   var xAxisLabel = "X";
   var isConnected = false;
+  var lastComputedMinY = 0;
+  var lastComputedMaxY = 100;
   var MAX_POINTS_TO_KEEP = 1e3;
   var lineColors = [
     "#00f0ff",
@@ -78,6 +84,22 @@
   });
   btnClearConsole.addEventListener("click", () => {
     consoleOutput.innerHTML = "";
+  });
+  autorangeYCheckbox.addEventListener("change", () => {
+    if (autorangeYCheckbox.checked) {
+      yRangeGroup.style.display = "none";
+    } else {
+      yRangeGroup.style.display = "flex";
+      yMinInput.value = lastComputedMinY.toString();
+      yMaxInput.value = lastComputedMaxY.toString();
+    }
+    drawPlot();
+  });
+  yMinInput.addEventListener("input", () => {
+    drawPlot();
+  });
+  yMaxInput.addEventListener("input", () => {
+    drawPlot();
   });
   btnConnect.addEventListener("click", () => {
     const source = sourcePathInput.value.trim();
@@ -238,34 +260,50 @@
     }
     let minX = Math.min(...xData);
     let maxX = Math.max(...xData);
-    let minY = Infinity;
-    let maxY = -Infinity;
-    yDataList.forEach((arr) => {
-      if (arr.length > 0) {
-        minY = Math.min(minY, ...arr);
-        maxY = Math.max(maxY, ...arr);
-      }
-    });
-    if (minY === Infinity)
-      minY = -1;
-    if (maxY === -Infinity)
-      maxY = 1;
     if (maxX === minX) {
       minX -= 1;
       maxX += 1;
     }
-    if (maxY === minY) {
-      minY -= 1;
-      maxY += 1;
-    }
     const xRange = maxX - minX;
+    let minY = 0;
+    let maxY = 100;
+    if (autorangeYCheckbox.checked) {
+      let rawMinY = Infinity;
+      let rawMaxY = -Infinity;
+      yDataList.forEach((arr) => {
+        if (arr.length > 0) {
+          rawMinY = Math.min(rawMinY, ...arr);
+          rawMaxY = Math.max(rawMaxY, ...arr);
+        }
+      });
+      if (rawMinY === Infinity)
+        rawMinY = -1;
+      if (rawMaxY === -Infinity)
+        rawMaxY = 1;
+      if (rawMaxY === rawMinY) {
+        rawMinY -= 1;
+        rawMaxY += 1;
+      }
+      const rawYRange = rawMaxY - rawMinY;
+      const padY = rawYRange * 0.05;
+      minY = rawMinY - padY;
+      maxY = rawMaxY + padY;
+    } else {
+      minY = parseFloat(yMinInput.value);
+      maxY = parseFloat(yMaxInput.value);
+      if (isNaN(minY))
+        minY = 0;
+      if (isNaN(maxY))
+        maxY = 100;
+      if (maxY <= minY) {
+        maxY = minY + 1;
+      }
+    }
+    lastComputedMinY = minY;
+    lastComputedMaxY = maxY;
     const yRange = maxY - minY;
-    const padY = yRange * 0.05;
-    minY -= padY;
-    maxY += padY;
-    const paddedYRange = maxY - minY;
     const getXPixel = (val) => margin.left + (val - minX) / xRange * chartWidth;
-    const getYPixel = (val) => margin.top + chartHeight - (val - minY) / paddedYRange * chartHeight;
+    const getYPixel = (val) => margin.top + chartHeight - (val - minY) / yRange * chartHeight;
     const numGridLines = 5;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
@@ -273,7 +311,7 @@
     ctx.font = "10px JetBrains Mono";
     for (let i = 0; i <= numGridLines; i++) {
       const pct = i / numGridLines;
-      const yVal = minY + pct * paddedYRange;
+      const yVal = minY + pct * yRange;
       const py = getYPixel(yVal);
       ctx.beginPath();
       ctx.strokeStyle = "rgba(255, 255, 255, 0.04)";
@@ -304,6 +342,10 @@
     ctx.rotate(-Math.PI / 2);
     ctx.fillText("Values", 0, 0);
     ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(margin.left, margin.top, chartWidth, chartHeight);
+    ctx.clip();
     yDataList.forEach((yArr, lineIndex) => {
       if (yArr.length < 2)
         return;
@@ -323,6 +365,7 @@
       ctx.stroke();
       ctx.restore();
     });
+    ctx.restore();
     if (legendLabels.length > 0) {
       ctx.font = "10px Inter";
       ctx.textAlign = "left";

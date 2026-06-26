@@ -170,8 +170,8 @@ function getWebviewContent(webview, context) {
   );
   const htmlPath = path.join(context.extensionPath, "src", "webview", "index.html");
   let html = fs.readFileSync(htmlPath, "utf8");
-  html = html.replace("${scriptUri}", scriptUri.toString());
-  html = html.replace("${stylesUri}", stylesUri.toString());
+  html = html.replace("${scriptUri}", `${scriptUri.toString()}?t=${Date.now()}`);
+  html = html.replace("${stylesUri}", `${stylesUri.toString()}?t=${Date.now()}`);
   return html;
 }
 // Annotate the CommonJS export names for ESM import in node:
